@@ -76,137 +76,131 @@
     .numero-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font-size: 13px; border-bottom: 0.5px solid var(--border); font-family: monospace; }
     .numero-row:last-child { border-bottom: none; }
 
+    /* Organizações */
+    .org-list { max-height: 150px; overflow-y: auto; border: 0.5px solid var(--border); border-radius: 8px; margin-bottom: 12px; }
+    .org-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; font-size: 13px; border-bottom: 0.5px solid var(--border); }
+    .org-row:last-child { border-bottom: none; }
+    .org-row:hover { background: var(--bg); }
+
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 <div class="layout">
   <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="dot">Z</div>
-      Campanha Zap
-    </div>
-    <div class="nav-item">📊 Dashboard</div>
-    <div class="nav-item">📢 Campanhas</div>
-    <div class="nav-item">💳 Créditos</div>
-    <div class="nav-item">📋 Relação de Campanhas</div>
-    <div class="nav-item">🔗 API</div>
-    <div class="nav-item active">📣 Avisos WhatsApp</div>
+    <div class="sidebar-logo"><div class="dot">Z</div>Campanha Zap</div>
+    <div class="nav-item active" id="nav-avisos" onclick="showPage('avisos')">📣 Avisos WhatsApp</div>
     <div class="nav-section">Administração</div>
-    <div class="nav-item">👥 Gerenciar Usuários</div>
-    <div class="nav-item">🏢 Gerenciar Organizações</div>
-    <div class="nav-item">⚙️ Configurações</div>
+    <div class="nav-item" id="nav-organizacoes" onclick="showPage('organizacoes')">🏢 Gerenciar Organizações</div>
   </aside>
 
   <main class="main">
-    <h1>Avisos via WhatsApp</h1>
-    <p class="subtitle">Envie um aviso diretamente para os clientes pelo WhatsApp, sem precisarem acessar o site.</p>
+    <!-- Página de Avisos -->
+    <div id="page-avisos">
+      <h1>Avisos via WhatsApp</h1>
+      <p class="subtitle">Envie um aviso diretamente para os clientes pelo WhatsApp.</p>
 
-    <!-- Conexão -->
-    <div class="card">
-      <div class="card-label">Conexão WhatsApp</div>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="conn-badge desconectado" id="conn-badge">
-          <span class="dot-status"></span>
-          <span id="conn-texto">Verificando...</span>
-        </span>
-        <button class="chip" onclick="verificarConexao()">Atualizar</button>
-        <button class="chip" id="btn-desconectar" onclick="desconectar()" style="color:var(--danger-text);border-color:var(--danger-border)">Desconectar</button>
-      </div>
-      <div id="qr-area" class="hidden" style="margin-top:12px">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Escaneie o QR Code com o WhatsApp:</p>
-        <img id="qr-img" src="" alt="QR Code" />
-      </div>
-    </div>
-
-    <!-- Mensagem -->
-    <div class="card">
-      <div class="card-label">Mensagem</div>
-      <div class="chips">
-        <button class="chip active" id="chip-digitar" onclick="setFonte('digitar')">Digitar agora</button>
-        <button class="chip" id="chip-salva" onclick="setFonte('salva')">Usar mensagem das configurações</button>
-      </div>
-      <div id="area-digitar">
-        <textarea id="msg-input" rows="4" placeholder="Ex: Estamos realizando manutenção. Os envios podem atrasar."></textarea>
-        <p style="font-size:12px;color:var(--muted);margin-top:4px" id="char-count">0 caracteres</p>
-      </div>
-      <div id="area-salva" class="hidden">
-        <div class="msg-preview" id="msg-preview-txt">Carregando...</div>
-      </div>
-    </div>
-
-    <!-- Destinatários -->
-    <div class="card">
-      <div class="card-label">Destinatários</div>
-      <div class="chips">
-        <button class="chip active" id="chip-todos" onclick="setModo('todos')">Todos os clientes</button>
-        <button class="chip" id="chip-org"  onclick="setModo('org')">Por organização</button>
-        <button class="chip" id="chip-esp"  onclick="setModo('esp')">Clientes específicos</button>
-        <button class="chip" id="chip-txt"  onclick="setModo('txt')">Subir lista TXT</button>
-      </div>
-
-      <div id="area-org" class="hidden">
-        <select id="sel-org"><option value="">Selecione uma organização...</option></select>
-      </div>
-
-      <div id="area-esp" class="hidden">
-        <div class="cliente-list" id="lista-clientes">
-          <div class="cliente-row" style="color:var(--muted)">Carregando clientes...</div>
+      <!-- Conexão -->
+      <div class="card">
+        <div class="card-label">Conexão WhatsApp</div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="conn-badge desconectado" id="conn-badge"><span class="dot-status"></span><span id="conn-texto">Verificando...</span></span>
+          <button class="chip" onclick="verificarConexao()">Atualizar</button>
+          <button class="chip" id="btn-desconectar" onclick="desconectar()" style="color:var(--danger-text);border-color:var(--danger-border)">Desconectar</button>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin-top:6px" id="sel-count">0 selecionados</p>
+        <div id="qr-area" class="hidden" style="margin-top:12px">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Escaneie o QR Code:</p>
+          <img id="qr-img" src="" alt="QR Code" />
+        </div>
       </div>
 
-      <!-- Adicionar cliente -->
-      <div style="margin-top:14px;border-top:0.5px solid var(--border);padding-top:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer" onclick="toggleFormCliente()">
-          <span style="font-weight:500;font-size:14px">Adicionar cliente</span>
-          <span id="form-toggle-icon" style="font-size:18px;color:var(--muted)">+</span>
+      <!-- Mensagem -->
+      <div class="card">
+        <div class="card-label">Mensagem</div>
+        <div class="chips">
+          <button class="chip active" id="chip-digitar" onclick="setFonte('digitar')">Digitar agora</button>
+          <button class="chip" id="chip-salva" onclick="setFonte('salva')">Mensagem Salva</button>
         </div>
-        <div id="form-cliente" class="hidden">
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <input type="text" id="novo-nome" placeholder="Nome" style="flex:1;font-size:13px;padding:8px 10px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit" />
-            <input type="text" id="novo-tel" placeholder="Telefone (ex: 5534987654321)" style="flex:1.5;font-size:13px;padding:8px 10px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit" />
-            <button onclick="adicionarCliente()" style="padding:8px 16px;border-radius:8px;border:0.5px solid var(--success-border);background:var(--success-bg);color:var(--success-text);font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit">Adicionar</button>
+        <div id="area-digitar">
+          <textarea id="msg-input" rows="4" placeholder="Ex: Estamos realizando manutenção."></textarea>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px" id="char-count">0 caracteres</p>
+        </div>
+        <div id="area-salva" class="hidden">
+          <div class="msg-preview" id="msg-preview-txt">Carregando...</div>
+        </div>
+      </div>
+
+      <!-- Destinatários -->
+      <div class="card">
+        <div class="card-label">Destinatários</div>
+        <div class="chips">
+          <button class="chip active" id="chip-todos" onclick="setModo('todos')">Todos</button>
+          <button class="chip" id="chip-org" onclick="setModo('org')">Por organização</button>
+          <button class="chip" id="chip-esp" onclick="setModo('esp')">Específicos</button>
+          <button class="chip" id="chip-txt" onclick="setModo('txt')">Lista TXT</button>
+        </div>
+
+        <div id="area-org" class="hidden"><select id="sel-org"><option value="">Selecione...</option></select></div>
+        <div id="area-esp" class="hidden">
+          <div class="cliente-list" id="lista-clientes"></div>
+          <p style="font-size:12px;color:var(--muted);margin-top:6px" id="sel-count">0 selecionados</p>
+        </div>
+
+        <!-- Adicionar cliente rápido -->
+        <div style="margin-top:14px;border-top:0.5px solid var(--border);padding-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer" onclick="toggleFormCliente()">
+            <span style="font-weight:500;font-size:14px">Adicionar cliente rápido</span>
+            <span id="form-toggle-icon">+</span>
           </div>
-          <p style="font-size:11px;color:var(--muted)">DDI + DDD + número, só dígitos. Ex: 5534987654321</p>
-          <div id="form-alert" class="hidden" style="margin-top:8px;padding:8px 12px;border-radius:8px;font-size:13px;border:0.5px solid"></div>
+          <div id="form-cliente" class="hidden">
+            <input type="text" id="novo-nome" placeholder="Nome">
+            <input type="text" id="novo-tel" placeholder="Telefone">
+            <select id="novo-org"><option value="">Sem organização</option></select>
+            <button class="btn-main" onclick="adicionarCliente()">Adicionar Cliente</button>
+            <div id="form-alert" class="hidden" style="margin-top:8px;padding:8px 12px;border-radius:8px;font-size:13px;border:0.5px solid"></div>
+          </div>
+        </div>
+
+        <!-- Upload TXT -->
+        <div id="area-txt" class="hidden">
+          <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" accept=".txt" onchange="handleFile(this.files[0])">
+            <div>📄 Clique ou arraste um arquivo .txt</div>
+          </div>
+          <div id="txt-preview-area" class="hidden">
+            <p id="txt-count">0 números</p>
+            <div class="numeros-preview" id="numeros-preview"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Upload TXT -->
-      <div id="area-txt" class="hidden">
-        <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()"
-          ondragover="event.preventDefault();this.classList.add('drag')"
-          ondragleave="this.classList.remove('drag')"
-          ondrop="handleDrop(event)">
-          <input type="file" id="file-input" accept=".txt" onchange="handleFile(this.files[0])">
-          <div style="font-size:28px;margin-bottom:8px">📄</div>
-          <div style="font-weight:500;margin-bottom:4px;color:var(--text)">Clique ou arraste um arquivo .txt</div>
-          <div style="font-size:12px">Um número por linha — ex: 5534999990001</div>
-        </div>
+      <div id="alert-box" class="hidden"></div>
+      <button class="btn-main" id="btn-disparar" onclick="disparar()">Disparar aviso</button>
 
-        <div id="txt-preview-area" class="hidden" style="margin-top:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <p style="font-size:13px;font-weight:500;color:var(--text)" id="txt-count">0 números carregados</p>
-            <button class="chip" onclick="limparTxt()" style="font-size:12px;padding:4px 10px">Limpar</button>
-          </div>
-          <div class="numeros-preview" id="numeros-preview"></div>
+      <div id="metrics-box" class="hidden" style="margin-top:20px">
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">Enviados</div><div class="metric-val log-ok" id="m-ok">0</div></div>
+          <div class="metric"><div class="metric-label">Falhas</div><div class="metric-val log-err" id="m-err">0</div></div>
+          <div class="metric"><div class="metric-label">Total</div><div class="metric-val" id="m-total">0</div></div>
         </div>
+        <div class="log-list" id="log-list"></div>
       </div>
     </div>
 
-    <div id="alert-box" class="hidden"></div>
-
-    <button class="btn-main" id="btn-disparar" onclick="disparar()">Disparar aviso</button>
-
-    <div id="metrics-box" class="hidden" style="margin-top:20px">
-      <div class="metrics">
-        <div class="metric"><div class="metric-label">Total enviados</div><div class="metric-val log-ok" id="m-ok">0</div></div>
-        <div class="metric"><div class="metric-label">Falhas</div><div class="metric-val log-err" id="m-err">0</div></div>
-        <div class="metric"><div class="metric-label">Total tentativas</div><div class="metric-val" id="m-total">0</div></div>
+    <!-- Página de Organizações -->
+    <div id="page-organizacoes" class="hidden">
+      <h1>Gerenciar Organizações</h1>
+      <div class="card">
+        <div class="card-label">Adicionar Nova Organização</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="nova-org-nome" placeholder="Nome da organização" style="flex:1">
+          <button class="chip" onclick="adicionarOrganizacao()">Adicionar</button>
+        </div>
       </div>
-      <div class="card-label" style="margin-bottom:8px">Log de envio</div>
-      <div class="log-list" id="log-list"></div>
+      <div class="card">
+        <div class="card-label">Organizações Cadastradas</div>
+        <div class="org-list" id="lista-organizacoes"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -216,291 +210,151 @@
   let fonte = 'digitar';
   let clientesSelecionados = new Set();
   let clientes = [];
+  let organizacoes = [];
   let msgSalva = '';
   let numerosTxt = [];
+
+  function showPage(page) {
+    document.getElementById('page-avisos').classList.toggle('hidden', page !== 'avisos');
+    document.getElementById('page-organizacoes').classList.toggle('hidden', page !== 'organizacoes');
+    document.getElementById('nav-avisos').classList.toggle('active', page === 'avisos');
+    document.getElementById('nav-organizacoes').classList.toggle('active', page === 'organizacoes');
+  }
 
   async function init() {
     verificarConexao();
     setInterval(verificarConexao, 5000);
-
-    const r = await fetch('/api/configuracoes/mensagem').then(r => r.json()).catch(() => ({}));
+    const r = await fetch('/api/configuracoes/mensagem').then(r => r.json());
     msgSalva = r.mensagem || '';
-    document.getElementById('msg-preview-txt').textContent = msgSalva || 'Nenhuma mensagem salva.';
+    document.getElementById('msg-preview-txt').textContent = msgSalva;
+    carregarOrganizacoes();
+    carregarClientes();
+  }
 
-    const orgs = await fetch('/api/organizacoes').then(r => r.json()).catch(() => []);
-    const sel = document.getElementById('sel-org');
-    orgs.forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.id; opt.textContent = o.nome;
-      sel.appendChild(opt);
+  async function carregarOrganizacoes() {
+    organizacoes = await fetch('/api/organizacoes').then(r => r.json());
+    const selects = ['novo-org', 'sel-org'];
+    selects.forEach(id => {
+      const el = document.getElementById(id);
+      const first = el.options[0].outerHTML;
+      el.innerHTML = first;
+      organizacoes.forEach(o => el.innerHTML += `<option value="${o.id}">${o.nome}</option>`);
     });
+    renderizarOrganizacoes();
+  }
 
-    const cl = await fetch('/api/clientes/numeros').then(r => r.json()).catch(() => []);
-    clientes = cl;
+  function renderizarOrganizacoes() {
+    const lista = document.getElementById('lista-organizacoes');
+    lista.innerHTML = '';
+    organizacoes.forEach(o => {
+      const count = clientes.filter(c => c.organizacaoId === o.id).length;
+      lista.innerHTML += `<div class="org-row"><span>${o.nome}</span><span style="color:var(--muted)">${count} cliente(s)</span></div>`;
+    });
+  }
+
+  async function adicionarOrganizacao() {
+    const nome = document.getElementById('nova-org-nome').value.trim();
+    if (!nome) return;
+    await fetch('/api/organizacoes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome}) });
+    document.getElementById('nova-org-nome').value = '';
+    carregarOrganizacoes();
+  }
+
+  async function carregarClientes() {
+    clientes = await fetch('/api/clientes/numeros').then(r => r.json());
     renderClientes();
-  }
-
-  async function verificarConexao() {
-    const s = await fetch('/api/whatsapp/status').then(r => r.json()).catch(() => ({ status: 'desconectado' }));
-    const badge = document.getElementById('conn-badge');
-    badge.className = 'conn-badge ' + s.status;
-    const labels = { conectado: 'Conectado', aguardando_qr: 'Aguardando QR Code', desconectado: 'Desconectado' };
-    document.getElementById('conn-texto').textContent = labels[s.status] || s.status;
-    const qrArea = document.getElementById('qr-area');
-    if (s.status === 'aguardando_qr') {
-      const qr = await fetch('/api/whatsapp/qr').then(r => r.json()).catch(() => ({}));
-      if (qr.qr) { document.getElementById('qr-img').src = qr.qr; qrArea.classList.remove('hidden'); }
-    } else {
-      qrArea.classList.add('hidden');
-    }
-  }
-
-  function setFonte(v) {
-    fonte = v;
-    document.getElementById('area-digitar').classList.toggle('hidden', v !== 'digitar');
-    document.getElementById('area-salva').classList.toggle('hidden', v !== 'salva');
-    document.getElementById('chip-digitar').className = 'chip' + (v === 'digitar' ? ' active' : '');
-    document.getElementById('chip-salva').className = 'chip' + (v === 'salva' ? ' active' : '');
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('msg-input').addEventListener('input', function() {
-      document.getElementById('char-count').textContent = this.value.length + ' caracteres';
-    });
-  });
-
-  function setModo(v) {
-    modo = v;
-    ['todos','org','esp','txt'].forEach(m => {
-      document.getElementById('chip-' + m).className = 'chip' + (v === m ? ' active' : '');
-      const area = document.getElementById('area-' + m);
-      if (area) area.classList.toggle('hidden', v !== m);
-    });
   }
 
   function renderClientes() {
     const lista = document.getElementById('lista-clientes');
     lista.innerHTML = '';
-    if (clientes.length === 0) {
-      lista.innerHTML = '<div class="cliente-row" style="color:var(--muted)">Nenhum cliente cadastrado.</div>';
-      return;
-    }
     clientes.forEach(c => {
       const row = document.createElement('div');
       row.className = 'cliente-row';
-      row.style.cssText = 'display:flex;align-items:center;gap:8px';
-
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = clientesSelecionados.has(c.id);
-      cb.onchange = () => {
-        cb.checked ? clientesSelecionados.add(c.id) : clientesSelecionados.delete(c.id);
-        document.getElementById('sel-count').textContent = clientesSelecionados.size + ' selecionado(s)';
-      };
-
-      const nome = document.createElement('span');
-      nome.textContent = c.nome;
-
-      const tel = document.createElement('span');
-      tel.className = 'tel';
-      tel.textContent = c.telefone;
-
-      const btn = document.createElement('button');
-      btn.textContent = '×';
-      btn.title = 'Remover cliente';
-      btn.style.cssText = 'margin-left:auto;border:none;background:none;color:var(--danger-text);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0';
-      btn.onclick = (e) => { e.stopPropagation(); removerCliente(c.id); };
-
-      row.appendChild(cb);
-      row.appendChild(nome);
-      row.appendChild(tel);
-      row.appendChild(btn);
+      row.innerHTML = `<input type="checkbox" ${clientesSelecionados.has(c.id) ? 'checked' : ''} onchange="toggleCliente('${c.id}')"> <span>${c.nome}</span> <span class="tel">${c.telefone}</span>`;
       lista.appendChild(row);
     });
   }
 
-  function toggleFormCliente() {
-    const form = document.getElementById('form-cliente');
-    const icon = document.getElementById('form-toggle-icon');
-    const hidden = form.classList.toggle('hidden');
-    icon.textContent = hidden ? '+' : '−';
+  function toggleCliente(id) {
+    clientesSelecionados.has(id) ? clientesSelecionados.delete(id) : clientesSelecionados.add(id);
+    document.getElementById('sel-count').textContent = clientesSelecionados.size + ' selecionados';
   }
 
   async function adicionarCliente() {
     const nome = document.getElementById('novo-nome').value.trim();
     const telefone = document.getElementById('novo-tel').value.trim();
-    const alertEl = document.getElementById('form-alert');
+    const organizacaoId = document.getElementById('novo-org').value || null;
+    if (!nome || !telefone) return;
+    await fetch('/api/clientes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome, telefone, organizacaoId}) });
+    document.getElementById('novo-nome').value = '';
+    document.getElementById('novo-tel').value = '';
+    carregarClientes();
+  }
 
-    const showFormAlert = (tipo, msg) => {
-      alertEl.style.background = tipo === 'ok' ? 'var(--success-bg)' : 'var(--danger-bg)';
-      alertEl.style.color = tipo === 'ok' ? 'var(--success-text)' : 'var(--danger-text)';
-      alertEl.style.borderColor = tipo === 'ok' ? 'var(--success-border)' : 'var(--danger-border)';
-      alertEl.textContent = msg;
-      alertEl.classList.remove('hidden');
-    };
-
-    if (!nome) return showFormAlert('err', 'Digite o nome do cliente.');
-    if (!telefone) return showFormAlert('err', 'Digite o número de telefone.');
-
-    try {
-      const res = await fetch('/api/clientes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, telefone }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        clientes.push(data);
-        renderClientes();
-        document.getElementById('novo-nome').value = '';
-        document.getElementById('novo-tel').value = '';
-        showFormAlert('ok', `${data.nome} adicionado com sucesso!`);
-        setTimeout(() => alertEl.classList.add('hidden'), 3000);
-      } else {
-        showFormAlert('err', data.erro || 'Erro ao adicionar cliente.');
-      }
-    } catch {
-      showFormAlert('err', 'Erro de conexão com o servidor.');
+  async function verificarConexao() {
+    const s = await fetch('/api/whatsapp/status').then(r => r.json());
+    document.getElementById('conn-badge').className = 'conn-badge ' + s.status;
+    document.getElementById('conn-texto').textContent = s.status;
+    if (s.status === 'aguardando_qr') {
+      const q = await fetch('/api/whatsapp/qr').then(r => r.json());
+      document.getElementById('qr-img').src = q.qr;
+      document.getElementById('qr-area').classList.remove('hidden');
+    } else {
+      document.getElementById('qr-area').classList.add('hidden');
     }
   }
 
-  async function removerCliente(id) {
-    if (!confirm('Remover este cliente da lista?')) return;
-    try {
-      const res = await fetch('/api/clientes/' + id, { method: 'DELETE' });
-      if (res.ok) {
-        clientes = clientes.filter(c => c.id !== id);
-        clientesSelecionados.delete(id);
-        document.getElementById('sel-count').textContent = clientesSelecionados.size + ' selecionado(s)';
-        renderClientes();
-      }
-    } catch {}
+  function setModo(v) {
+    modo = v;
+    ['todos','org','esp','txt'].forEach(m => document.getElementById('chip-'+m).classList.toggle('active', v === m));
+    document.getElementById('area-org').classList.toggle('hidden', v !== 'org');
+    document.getElementById('area-esp').classList.toggle('hidden', v !== 'esp');
+    document.getElementById('area-txt').classList.toggle('hidden', v !== 'txt');
   }
 
-  // ── Upload TXT ─────────────────────────────────────────────────
-  function handleDrop(e) {
-    e.preventDefault();
-    document.getElementById('upload-area').classList.remove('drag');
-    const file = e.dataTransfer.files[0];
-    if (file && file.name.endsWith('.txt')) handleFile(file);
+  function setFonte(v) {
+    fonte = v;
+    document.getElementById('chip-digitar').classList.toggle('active', v === 'digitar');
+    document.getElementById('chip-salva').classList.toggle('active', v === 'salva');
+    document.getElementById('area-digitar').classList.toggle('hidden', v !== 'digitar');
+    document.getElementById('area-salva').classList.toggle('hidden', v !== 'salva');
   }
 
   function handleFile(file) {
-    if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      const linhas = e.target.result.split(/\r?\n/);
-      numerosTxt = linhas
-        .map(l => l.trim().replace(/\D/g, ''))
-        .filter(n => n.length >= 10);
-
-      document.getElementById('txt-count').textContent = numerosTxt.length + ' número(s) carregado(s)';
-
-      const preview = document.getElementById('numeros-preview');
-      preview.innerHTML = '';
-      numerosTxt.forEach((n, i) => {
-        const row = document.createElement('div');
-        row.className = 'numero-row';
-        row.innerHTML = `<span style="color:var(--muted);font-size:11px">${i + 1}</span><span>${n}</span>`;
-        preview.appendChild(row);
-      });
-
+      numerosTxt = e.target.result.split(/\n/).map(l => l.trim()).filter(l => l.length > 5);
+      document.getElementById('txt-count').textContent = numerosTxt.length + ' números';
       document.getElementById('txt-preview-area').classList.remove('hidden');
     };
     reader.readAsText(file);
   }
 
-  function limparTxt() {
-    numerosTxt = [];
-    document.getElementById('txt-preview-area').classList.add('hidden');
-    document.getElementById('file-input').value = '';
-  }
-
-  // ── Disparar ───────────────────────────────────────────────────
   async function disparar() {
-    const mensagem = fonte === 'salva' ? msgSalva : document.getElementById('msg-input').value.trim();
-    const alertBox = document.getElementById('alert-box');
-
-    const showAlert = (tipo, msg) => {
-      alertBox.className = 'alert ' + tipo;
-      alertBox.textContent = msg;
-      alertBox.classList.remove('hidden');
-    };
-
-    if (!mensagem) return showAlert('err', 'Digite ou selecione uma mensagem antes de disparar.');
-    if (modo === 'org' && !document.getElementById('sel-org').value) return showAlert('err', 'Selecione uma organização.');
-    if (modo === 'esp' && clientesSelecionados.size === 0) return showAlert('err', 'Selecione ao menos um cliente.');
-    if (modo === 'txt' && numerosTxt.length === 0) return showAlert('err', 'Suba um arquivo TXT com os números.');
-
-    alertBox.classList.add('hidden');
-    document.getElementById('metrics-box').classList.add('hidden');
-    const btn = document.getElementById('btn-disparar');
-    btn.disabled = true;
-    btn.textContent = 'Enviando...';
-
-    try {
-      const modoAPI = modo === 'todos' ? 'todos'
-                    : modo === 'org'   ? 'organizacao'
-                    : modo === 'esp'   ? 'especificos'
-                    :                    'txt';
-
-      const body = {
-        mensagem,
-        modo: modoAPI,
-        organizacaoId: document.getElementById('sel-org')?.value || null,
-        clienteIds: [...clientesSelecionados],
-        numerosTxt,
-      };
-
-      const res = await fetch('/api/avisos/disparar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        showAlert('ok', `Aviso enviado para ${data.total} contato(s) com sucesso.`);
-        renderLog(data.log || []);
-      } else {
-        showAlert('err', data.erro || 'Erro ao disparar o aviso.');
-      }
-    } catch {
-      showAlert('err', 'Erro de conexão com o servidor.');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Disparar aviso';
-    }
+    const msg = fonte === 'salva' ? msgSalva : document.getElementById('msg-input').value;
+    const body = { mensagem: msg, modo, organizacaoId: document.getElementById('sel-org').value, clienteIds: [...clientesSelecionados], numerosTxt };
+    const res = await fetch('/api/avisos/disparar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    renderLog(data.log);
   }
 
   function renderLog(log) {
-    const ok = log.filter(l => l.status === 'ok').length;
-    const err = log.filter(l => l.status !== 'ok').length;
-    document.getElementById('m-ok').textContent = ok;
-    document.getElementById('m-err').textContent = err;
-    document.getElementById('m-total').textContent = log.length;
     const lista = document.getElementById('log-list');
     lista.innerHTML = '';
-    log.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'log-row';
-      row.innerHTML = `<span>${item.nome} <span style="color:var(--muted)">(${item.telefone})</span></span><span class="${item.status === 'ok' ? 'log-ok' : 'log-err'}">${item.status === 'ok' ? 'Enviado' : 'Falhou'}</span>`;
-      lista.appendChild(row);
-    });
+    log.forEach(l => lista.innerHTML += `<div class="log-row"><span>${l.nome}</span><span class="${l.status === 'ok' ? 'log-ok' : 'log-err'}">${l.status}</span></div>`);
     document.getElementById('metrics-box').classList.remove('hidden');
+    document.getElementById('m-ok').textContent = log.filter(l => l.status === 'ok').length;
+    document.getElementById('m-err').textContent = log.filter(l => l.status !== 'ok').length;
+    document.getElementById('m-total').textContent = log.length;
   }
 
   async function desconectar() {
-    const btn = document.getElementById('btn-desconectar');
-    btn.textContent = 'Desconectando...';
-    btn.disabled = true;
-    await fetch('/api/whatsapp/desconectar', { method: 'POST' }).catch(() => {});
-    setTimeout(() => {
-      btn.textContent = 'Desconectar';
-      btn.disabled = false;
-      verificarConexao();
-    }, 2000);
+    await fetch('/api/whatsapp/desconectar', { method: 'POST' });
+    verificarConexao();
   }
+
+  function toggleFormCliente() { document.getElementById('form-cliente').classList.toggle('hidden'); }
 
   init();
 </script>

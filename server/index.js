@@ -9,19 +9,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client')));
 
 const DB = {
-  mensagemSalva: 'Estamos realizando ajuste na plataforma junto a Meta. Assim que estiver disponível avisaremos no comunicado na Dashboard.',
+  mensagemSalva: 'Estamos realizando ajuste na plataforma junto a Meta.',
   organizacoes: [
     { id: '1', nome: 'Organização Alpha' },
     { id: '2', nome: 'Organização Beta' },
-    { id: '3', nome: 'Organização Gamma' },
   ],
-  clientes: [
-    { id: '1', nome: 'João Silva',   telefone: '5534999990001', organizacaoId: '1' },
-    { id: '2', nome: 'Maria Souza',  telefone: '5534999990002', organizacaoId: '1' },
-    { id: '3', nome: 'Carlos Lima',  telefone: '5534999990003', organizacaoId: '2' },
-    { id: '4', nome: 'Ana Paula',    telefone: '5534999990004', organizacaoId: '2' },
-    { id: '5', nome: 'Pedro Santos', telefone: '5534999990005', organizacaoId: '3' },
-  ],
+  clientes: [],
 };
 
 app.get('/api/whatsapp/status', (req, res) => res.json(getStatus()));
@@ -33,18 +26,26 @@ app.post('/api/configuracoes/mensagem', (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/organizacoes', (req, res) => res.json(DB.organizacoes));
+app.get("/api/organizacoes", (req, res) => res.json(DB.organizacoes));
+
+app.post("/api/organizacoes", (req, res) => {
+  const { nome } = req.body;
+  if (!nome?.trim()) return res.status(400).json({ erro: "Nome da organização é obrigatório." });
+  const id = String(Date.now());
+  const novaOrganizacao = { id, nome: nome.trim() };
+  DB.organizacoes.push(novaOrganizacao);
+  res.json(novaOrganizacao);
+});
+
 app.get('/api/clientes/numeros', (req, res) => res.json(DB.clientes));
 
 app.post('/api/clientes', (req, res) => {
-  const { nome, telefone } = req.body;
-  if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório.' });
-  if (!telefone?.trim()) return res.status(400).json({ erro: 'Telefone é obrigatório.' });
+  const { nome, telefone, organizacaoId } = req.body;
+  if (!nome?.trim() || !telefone?.trim()) return res.status(400).json({ erro: 'Nome e telefone são obrigatórios.' });
   const tel = telefone.replace(/\D/g, '');
-  // Atualizado para aceitar de 10 a 13 dígitos
-  if (tel.length < 10 || tel.length > 13) return res.status(400).json({ erro: 'Telefone inválido. Use DDI+DDD+número (10 a 13 dígitos).' });
+  if (tel.length < 10 || tel.length > 13) return res.status(400).json({ erro: 'Telefone inválido.' });
   const id = String(Date.now());
-  const cliente = { id, nome: nome.trim(), telefone: tel, organizacaoId: null };
+  const cliente = { id, nome: nome.trim(), telefone: tel, organizacaoId: organizacaoId || null };
   DB.clientes.push(cliente);
   res.json(cliente);
 });
@@ -61,37 +62,23 @@ app.post('/api/avisos/disparar', async (req, res) => {
   if (!mensagem?.trim()) return res.status(400).json({ erro: 'Mensagem não pode ser vazia.' });
 
   let contatos = [];
-
-  if (modo === 'todos') {
-    contatos = DB.clientes;
-  } else if (modo === 'organizacao' && organizacaoId) {
-    contatos = DB.clientes.filter(c => c.organizacaoId === organizacaoId);
-  } else if (modo === 'especificos' && Array.isArray(clienteIds) && clienteIds.length > 0) {
-    contatos = DB.clientes.filter(c => clienteIds.includes(c.id));
-  } else if (modo === 'txt' && Array.isArray(numerosTxt) && numerosTxt.length > 0) {
-    contatos = numerosTxt.map((tel, i) => ({
-      id: 'txt_' + i,
-      nome: 'Contato TXT',
-      telefone: tel.replace(/\D/g, ''),
-    }));
-  }
+  if (modo === 'todos') contatos = DB.clientes;
+  else if (modo === 'organizacao') contatos = DB.clientes.filter(c => c.organizacaoId === organizacaoId);
+  else if (modo === 'especificos') contatos = DB.clientes.filter(c => clienteIds.includes(c.id));
+  else if (modo === 'txt') contatos = numerosTxt.map((tel, i) => ({ id: 'txt_'+i, nome: 'Contato TXT', telefone: tel.replace(/\D/g, '') }));
 
   if (contatos.length === 0) return res.status(404).json({ erro: 'Nenhum contato encontrado.' });
 
   const log = [];
-  const delay = ms => new Promise(r => setTimeout(r, ms));
-
   for (const contato of contatos) {
     try {
       await sendMessage(contato.telefone, mensagem);
       log.push({ nome: contato.nome, telefone: contato.telefone, status: 'ok' });
     } catch (err) {
-      console.error(`Falha: ${contato.telefone} — ${err.message}`);
       log.push({ nome: contato.nome, telefone: contato.telefone, status: 'erro' });
     }
-    await delay(1500);
+    await new Promise(r => setTimeout(r, 1500));
   }
-
   res.json({ sucesso: true, total: log.filter(l => l.status === 'ok').length, log });
 });
 

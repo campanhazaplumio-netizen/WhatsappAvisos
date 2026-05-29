@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filtro Delivered</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root {
+  --bg: #0d0d0f;
+  --surface: #17171a;
+  --surface2: #1f1f24;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0efe8;
+  --muted: #888780;
+  --accent: #1D9E75;
+  --accent-light: #9FE1CB;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,sans-serif;
+  min-height:100vh;
+}
+
+.header{
+  border-bottom:1px solid var(--border);
+  padding:20px 32px;
+}
+
+.main{
+  max-width:780px;
+  margin:0 auto;
+  padding:36px 24px 80px;
+}
+
+.step{ margin-bottom:28px; }
+
+.step-label{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.drop-zone{
+  border:1.5px dashed var(--border2);
+  border-radius:var(--radius-lg);
+  padding:40px 24px;
+  text-align:center;
+  cursor:pointer;
+  background:var(--surface);
+  position:relative;
+}
+
+.drop-zone input{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  cursor:pointer;
+}
+
+.drop-zone.has-file{
+  border-color:var(--accent);
+}
+
+.file-name{
+  margin-top:8px;
+  color:var(--accent-light);
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:20px;
+}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+
+.stat-box{
+  background:var(--surface2);
+  border-radius:var(--radius);
+  padding:14px;
+  text-align:center;
+}
+
+.slider-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.slider-row input[type=range]{
+  flex:1;
+}
+
+.slider-val{
+  min-width:60px;
+  text-align:right;
+  color:var(--accent-light);
+  font-weight:bold;
+}
+
+.btn{
+  padding:11px 22px;
+  border:none;
+  border-radius:var(--radius);
+  cursor:pointer;
+}
+
+.btn-primary{ background:var(--accent); color:#fff; }
+.btn-ghost{ background:var(--surface2); color:#fff; }
+
+.actions{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+}
+
+.log{
+  background:var(--surface2);
+  border-radius:var(--radius);
+  padding:16px;
+  font-size:12px;
+  line-height:1.8;
+  margin-top:14px;
+  max-height:200px;
+  overflow-y:auto;
+}
+
+.hidden{ display:none !important; }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>Filtro Delivered</h1>
+</div>
+
+<div class="main">
+
+  <div class="step">
+    <div class="step-label">1 — Selecione a planilha</div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+
+      <div style="font-size:42px">📂</div>
+      <h3>Arraste ou clique</h3>
+      <p>Suporta .xlsx, .xls e .csv</p>
+
+      <div class="file-name hidden" id="fileName"></div>
+    </div>
+  </div>
+
+  <div class="step hidden" id="statsSection">
+    <div class="step-label">2 — Diagnóstico</div>
+    <div class="card">
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+  </div>
+
+  <div class="step hidden" id="configSection">
+    <div class="step-label">3 — % alvo</div>
+    <div class="card">
+      <div class="slider-row">
+        <label>Meta Delivered</label>
+
+        <input type="range" id="pctSlider" min="1" max="100" value="95">
+
+        <div class="slider-val">
+          <span id="pctVal">95</span>%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step hidden" id="actionSection">
+    <div class="step-label">4 — Processar</div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="processFile()">Processar</button>
+
+      <button class="btn btn-ghost hidden" id="downloadBtn" onclick="downloadFile()">
+        Baixar convertidos
+      </button>
+
+      <button class="btn btn-ghost hidden" id="downloadRemovedBtn" onclick="downloadRemovedFile()">
+        Baixar removidos
+      </button>
+    </div>
+
+    <div class="log hidden" id="logBox"></div>
+  </div>
+
+</div>
+
+<script>
+
+let workbook = null;
+let sheetData = [];
+let headers = [];
+
+let statusColIdx = -1;
+let vistoEmColIdx = -1;
+
+let processedData = null;
+let removedWorkbook = null;
+
+let outputFileName = '';
+
+let removedRows = [];
+
+const $ = id => document.getElementById(id);
+
+// upload
+$('fileInput').addEventListener('change', e => {
+  handleFile(e.target.files[0]);
+});
+
+$('dropZone').addEventListener('dragover', e => e.preventDefault());
+
+$('dropZone').addEventListener('drop', e => {
+  e.preventDefault();
+  handleFile(e.dataTransfer.files[0]);
+});
+
+// slider update
+$('pctSlider').addEventListener('input', e => {
+  $('pctVal').textContent = e.target.value;
+});
+
+function handleFile(file){
+  if(!file) return;
+
+  $('fileName').textContent = file.name;
+  $('fileName').classList.remove('hidden');
+
+  outputFileName = file.name.replace(/\.[^.]+$/, '') + '_filtered.xlsx';
+
+  const reader = new FileReader();
+
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    workbook = XLSX.read(data, { type:'array' });
+    parseSheet();
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function parseSheet(){
+
+  const ws = workbook.Sheets[workbook.SheetNames[0]];
+
+  const raw = XLSX.utils.sheet_to_json(ws, {
+    header:1,
+    defval:''
+  });
+
+  headers = raw[0].map(h => String(h));
+
+  sheetData = raw.slice(1).filter(r => r.some(c => c !== ''));
+
+  statusColIdx = headers.findIndex(h => h.toLowerCase().trim() === 'status');
+  vistoEmColIdx = headers.findIndex(h => h.toLowerCase().trim() === 'visto em');
+
+  showStats();
+
+  $('statsSection').classList.remove('hidden');
+  $('configSection').classList.remove('hidden');
+  $('actionSection').classList.remove('hidden');
+}
+
+function countStatuses(){
+  const c = {};
+  sheetData.forEach(r => {
+    const v = String(r[statusColIdx] || '').trim();
+    c[v] = (c[v] || 0) + 1;
+  });
+  return c;
+}
+
+function showStats(){
+  const counts = countStatuses();
+  const total = sheetData.length;
+
+  const grid = $('statsGrid');
+  grid.innerHTML = '';
+
+  Object.entries(counts).forEach(([k,v]) => {
+    const div = document.createElement('div');
+    div.className = 'stat-box';
+    div.innerHTML = `
+      <div style="font-size:22px">${v}</div>
+      <div>${k}</div>
+      <div style="font-size:11px;opacity:.7">${((v/total)*100).toFixed(1)}%</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function log(msg){
+  const box = $('logBox');
+  box.classList.remove('hidden');
+
+  const d = document.createElement('div');
+  d.textContent = msg;
+  box.appendChild(d);
+}
+
+function processFile(){
+
+  $('logBox').innerHTML = '';
+
+  const target = parseInt($('pctSlider').value);
+
+  const counts = countStatuses();
+
+  const delivered = counts['Delivered'] || 0;
+  const expired = counts['Expired'] || 0;
+
+  const pool = delivered + expired;
+
+  let convert = 0;
+
+  if(pool > 0){
+    const needed = Math.ceil((target/100)*pool) - delivered;
+    convert = Math.max(0, Math.min(needed, expired));
+  }
+
+  log(`Meta: ${target}%`);
+  log(`Delivered: ${delivered}`);
+  log(`Expired: ${expired}`);
+
+  let step1 = sheetData.filter(r => {
+    const v = String(r[statusColIdx] || '').trim();
+    return v === 'Delivered' || v === 'Expired';
+  });
+
+  const expiredWithSeen = [];
+  const expiredWithoutSeen = [];
+
+  step1.forEach(r => {
+    if(String(r[statusColIdx]).trim() === 'Expired'){
+      const visto = vistoEmColIdx !== -1 ? String(r[vistoEmColIdx] || '').trim() : '';
+      if(visto) expiredWithSeen.push(r);
+      else expiredWithoutSeen.push(r);
+    }
+  });
+
+  const prioritized = [...expiredWithSeen, ...expiredWithoutSeen];
+
+  const rowsToConvert = new Set(prioritized.slice(0, convert));
+
+  removedRows = [];
+
+  const result = [];
+
+  step1.forEach(r => {
+    const status = String(r[statusColIdx] || '').trim();
+
+    if(status === 'Expired'){
+
+      if(rowsToConvert.has(r)){
+        const nr = [...r];
+        nr[statusColIdx] = 'Delivered';
+        result.push(nr);
+      } else {
+        removedRows.push(r);
+      }
+
+    } else {
+      result.push(r);
+    }
+  });
+
+  const ws1 = XLSX.utils.aoa_to_sheet([headers, ...result]);
+  const wb1 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb1, ws1, 'Filtered');
+
+  processedData = wb1;
+
+  const ws2 = XLSX.utils.aoa_to_sheet([headers, ...removedRows]);
+  removedWorkbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(removedWorkbook, ws2, 'Removed');
+
+  $('downloadBtn').classList.remove('hidden');
+  $('downloadRemovedBtn').classList.remove('hidden');
+
+  log('Processado com sucesso');
+}
+
+function downloadFile(){
+  XLSX.writeFile(processedData, outputFileName);
+}
+
+function downloadRemovedFile(){
+  XLSX.writeFile(
+    removedWorkbook,
+    outputFileName.replace('.xlsx','_removidos.xlsx')
+  );
+}
+
+</script>
+
+</body>
+</html>

@@ -34,7 +34,6 @@ async function initBaileys() {
       logger: pino({ level: 'silent' }),
       printQRInTerminal: false,
       browser: ['Campanha Zap Avisos', 'Chrome', '1.0.0'],
-      // Adicionando algumas opções para melhor estabilidade no Render
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 0,
       keepAliveIntervalMs: 10000,
@@ -48,7 +47,6 @@ async function initBaileys() {
       if (qr) {
         statusConexao = 'aguardando_qr';
         qrBase64 = await QRCode.toDataURL(qr);
-        console.log('QR Code gerado — acesse /api/whatsapp/qr ou a interface web');
       }
 
       if (connection === 'open') {
@@ -61,11 +59,8 @@ async function initBaileys() {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-        console.log(`Conexão fechada. Motivo: ${statusCode}. Reconectar: ${shouldReconnect}`);
-
         if (shouldReconnect) {
           statusConexao = 'desconectado';
-          // Limpa o socket atual antes de tentar reconectar
           if (sock) {
             sock.ev.removeAllListeners();
             sock = null;
@@ -73,7 +68,6 @@ async function initBaileys() {
           isInitializing = false;
           setTimeout(initBaileys, 3000);
         } else {
-          console.log('Sessão encerrada (Logout). Limpando dados...');
           statusConexao = 'desconectado';
           qrBase64 = null;
           if (sock) {
@@ -83,18 +77,14 @@ async function initBaileys() {
           if (fs.existsSync(AUTH_DIR)) {
             try {
               fs.rmSync(AUTH_DIR, { recursive: true, force: true });
-            } catch (err) {
-              console.error('Erro ao remover pasta de autenticação:', err);
-            }
+            } catch (err) {}
           }
           isInitializing = false;
-          // Após o logout, reinicia para gerar um novo QR Code
           setTimeout(initBaileys, 2000);
         }
       }
     });
   } catch (error) {
-    console.error('Erro ao inicializar Baileys:', error);
     isInitializing = false;
     setTimeout(initBaileys, 5000);
   }
@@ -102,12 +92,8 @@ async function initBaileys() {
 
 function formatarNumero(telefone) {
   let digitos = telefone.replace(/\D/g, "");
-
-  // Regra do 9º dígito extra para números brasileiros:
-  // Se tiver 13 dígitos (55 + DDD + 9 + 8 dígitos)
   if (digitos.length === 13 && digitos.substring(0, 2) === '55') {
     const ddd = parseInt(digitos.substring(2, 4));
-    // DDDs de 31 a 99 costumam exigir a remoção do 9 extra para o JID do WhatsApp
     if (ddd >= 31 && ddd <= 99) {
       digitos = digitos.substring(0, 4) + digitos.substring(5);
     }
@@ -123,19 +109,13 @@ async function sendMessage(telefone, texto) {
   await sock.sendMessage(jid, { text: texto });
 }
 
-function getStatus() {
-  return { status: statusConexao };
-}
-
-function getQR() {
-  return qrBase64;
-}
+function getStatus() { return { status: statusConexao }; }
+function getQR() { return qrBase64; }
 
 async function desconectar() {
-  console.log('Solicitação de desconexão recebida...');
   try {
     if (sock) {
-      await sock.logout().catch(e => console.log('Erro no logout:', e.message));
+      await sock.logout().catch(() => {});
     } else {
       statusConexao = 'desconectado';
       qrBase64 = null;
@@ -145,9 +125,7 @@ async function desconectar() {
       isInitializing = false;
       setTimeout(initBaileys, 1000);
     }
-  } catch (err) {
-    console.error('Erro ao desconectar:', err);
-  }
+  } catch (err) {}
 }
 
 module.exports = { initBaileys, sendMessage, getStatus, getQR, desconectar };
