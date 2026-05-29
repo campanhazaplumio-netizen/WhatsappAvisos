@@ -101,7 +101,17 @@ async function initBaileys() {
 }
 
 function formatarNumero(telefone) {
-  const digitos = telefone.replace(/\D/g, '');
+  let digitos = telefone.replace(/\D/g, "");
+
+  // Regra do 9º dígito extra para números brasileiros:
+  // Se tiver 13 dígitos (55 + DDD + 9 + 8 dígitos)
+  if (digitos.length === 13 && digitos.substring(0, 2) === '55') {
+    const ddd = parseInt(digitos.substring(2, 4));
+    // DDDs de 31 a 99 costumam exigir a remoção do 9 extra para o JID do WhatsApp
+    if (ddd >= 31 && ddd <= 99) {
+      digitos = digitos.substring(0, 4) + digitos.substring(5);
+    }
+  }
   return `${digitos}@s.whatsapp.net`;
 }
 
@@ -125,11 +135,8 @@ async function desconectar() {
   console.log('Solicitação de desconexão recebida...');
   try {
     if (sock) {
-      // O logout do Baileys já deve acionar o evento 'connection.update' com close e loggedOut
       await sock.logout().catch(e => console.log('Erro no logout:', e.message));
-      // Não precisamos fazer muito aqui, pois o evento 'connection.update' cuidará da limpeza
     } else {
-      // Se não houver socket mas a pasta existir, limpamos manualmente
       statusConexao = 'desconectado';
       qrBase64 = null;
       if (fs.existsSync(AUTH_DIR)) {

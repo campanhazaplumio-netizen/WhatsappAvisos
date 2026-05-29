@@ -41,7 +41,8 @@ app.post('/api/clientes', (req, res) => {
   if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório.' });
   if (!telefone?.trim()) return res.status(400).json({ erro: 'Telefone é obrigatório.' });
   const tel = telefone.replace(/\D/g, '');
-  if (tel.length < 10) return res.status(400).json({ erro: 'Telefone inválido. Use DDI+DDD+número.' });
+  // Atualizado para aceitar de 10 a 13 dígitos
+  if (tel.length < 10 || tel.length > 13) return res.status(400).json({ erro: 'Telefone inválido. Use DDI+DDD+número (10 a 13 dígitos).' });
   const id = String(Date.now());
   const cliente = { id, nome: nome.trim(), telefone: tel, organizacaoId: null };
   DB.clientes.push(cliente);
@@ -68,7 +69,6 @@ app.post('/api/avisos/disparar', async (req, res) => {
   } else if (modo === 'especificos' && Array.isArray(clienteIds) && clienteIds.length > 0) {
     contatos = DB.clientes.filter(c => clienteIds.includes(c.id));
   } else if (modo === 'txt' && Array.isArray(numerosTxt) && numerosTxt.length > 0) {
-    // Monta contatos a partir dos números do TXT
     contatos = numerosTxt.map((tel, i) => ({
       id: 'txt_' + i,
       nome: 'Contato TXT',
